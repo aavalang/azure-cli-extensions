@@ -497,6 +497,12 @@ def create_bastion_tunnel(cmd, target_resource_id, target_ip_address, resource_g
         # Validate that resource_port is provided for non-managed cluster targets
         if not resource_port:
             raise RequiredArgumentMissingError("--resource-port is required for non-managed cluster targets.")
+        
+        # Validate that resource_port is a valid integer
+        try:
+            int(resource_port)
+        except (TypeError, ValueError):
+            raise InvalidArgumentValueError(f"Invalid resource port: {resource_port}. Must be a valid integer.")
 
     _validate_resourceid(target_resource_id)
     bastion_endpoint = _get_bastion_endpoint(cmd, bastion, resource_port, target_resource_id)
