@@ -417,7 +417,7 @@ def _is_managed_cluster(target_resource_id):
     """Check if the target resource is a managed cluster (AKS)."""
     if not target_resource_id:
         return False
-    return "Microsoft.ContainerService/managedClusters" in target_resource_id.lower()
+    return "microsoft.containerservice/managedclusters" in target_resource_id.lower()
 
 
 def _get_bastion_endpoint(cmd, bastion, resource_port, target_resource_id):
