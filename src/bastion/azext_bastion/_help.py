@@ -51,4 +51,7 @@ examples:
   - name: Open a tunnel through Azure Bastion to a target virtual machine using its IP address.
     text: |
         az network bastion tunnel --name MyBastionHost --resource-group MyResourceGroup --target-ip-address 10.0.0.1 --resource-port 22 --port 50022
+  - name: Open a tunnel through Azure Bastion to a managed cluster (resource-port defaults to 443).
+    text: |
+        az network bastion tunnel --name MyBastionHost --resource-group MyResourceGroup --target-resource-id managedClusterResourceId --port 50443
 """

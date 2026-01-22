@@ -23,8 +23,6 @@ def load_arguments(self, _):  # pylint: disable=unused-argument
 
     with self.argument_context("network bastion") as c:
         c.argument("bastion_host_name", bastion_host_name_type, options_list=["--name", "-n"])
-        c.argument("resource_port", help="Resource port of the target VM to which the bastion will connect.",
-                   options_list=["--resource-port"])
         c.argument("target_resource_id", help="ResourceId of the target Virtual Machine.", required=False,
                    options_list=["--target-resource-id"])
         c.argument("target_ip_address", help="IP address of target Virtual Machine.", required=False,
@@ -46,5 +44,7 @@ def load_arguments(self, _):  # pylint: disable=unused-argument
                    "Available on Windows 10 20H2+, Windows 11 21H2+, WS 2022.",
                    arg_type=get_three_state_flag())
     with self.argument_context("network bastion tunnel") as c:
+        c.argument("resource_port", help="Resource port of the target resource to which the bastion will connect. Defaults to 443 for managed clusters.",
+                   options_list=["--resource-port"], required=False)
         c.argument("port", help="Local port to use for the tunneling.", options_list=["--port"])
         c.argument("timeout", help="Timeout for connection to bastion host tunnel.", options_list=["--timeout"])

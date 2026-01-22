@@ -413,6 +413,13 @@ def _validate_resourceid(target_resource_id):
         raise InvalidArgumentValueError(err_msg)
 
 
+def _is_managed_cluster(target_resource_id):
+    """Check if the target resource is a managed cluster (AKS)."""
+    if not target_resource_id:
+        return False
+    return "Microsoft.ContainerService/managedClusters" in target_resource_id.lower()
+
+
 def _get_bastion_endpoint(cmd, bastion, resource_port, target_resource_id):
     if bastion['sku']['name'] == BastionSku.QuickConnect.value or bastion['sku']['name'] == BastionSku.Developer.value:
         from .developer_sku_helper import (_get_data_pod)
@@ -466,6 +473,14 @@ def create_bastion_tunnel(cmd, target_resource_id, target_ip_address, resource_g
     if ip_connect:
         target_resource_id = f"/subscriptions/{get_subscription_id(cmd.cli_ctx)}/resourceGroups/" \
                              f"{resource_group_name}/providers/Microsoft.Network/bh-hostConnect/{target_ip_address}"
+
+    # Default resource_port to 443 for managed clusters if not provided
+    if not resource_port and _is_managed_cluster(target_resource_id):
+        resource_port = 443
+
+    # Validate that resource_port is provided for non-managed cluster targets
+    if not resource_port:
+        raise RequiredArgumentMissingError("--resource-port is required for non-managed cluster targets.")
 
     if ip_connect and int(resource_port) not in [22, 3389]:
         raise UnrecognizedArgumentError("Custom ports are not allowed. Allowed ports for Tunnel with IP connect is \
