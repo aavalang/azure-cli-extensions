@@ -31,6 +31,9 @@ from .aaz.latest.network.bastion import Create as _BastionCreate
 
 logger = get_logger(__name__)
 
+# Default port for managed cluster tunnel connections
+DEFAULT_MANAGED_CLUSTER_PORT = 443
+
 
 class BastionCreate(_BastionCreate):
     @classmethod
@@ -484,12 +487,12 @@ def create_bastion_tunnel(cmd, target_resource_id, target_ip_address, resource_g
             raise InvalidArgumentValueError(f"Invalid resource port: {resource_port}. Must be a valid integer.")
         
         if port_int not in [22, 3389]:
-            raise UnrecognizedArgumentError("Custom ports are not allowed. Allowed ports for Tunnel with IP connect is \
+            raise UnrecognizedArgumentError("Custom ports are not allowed. Allowed ports for Tunnel with IP connect are \
                                             22, 3389.")
     else:
-        # Default resource_port to 443 for managed clusters if not provided
+        # Default resource_port to DEFAULT_MANAGED_CLUSTER_PORT for managed clusters if not provided
         if not resource_port and _is_managed_cluster(target_resource_id):
-            resource_port = 443
+            resource_port = DEFAULT_MANAGED_CLUSTER_PORT
         
         # Validate that resource_port is provided for non-managed cluster targets
         if not resource_port:
