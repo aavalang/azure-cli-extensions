@@ -31,6 +31,9 @@ from .aaz.latest.network.bastion import Create as _BastionCreate
 
 logger = get_logger(__name__)
 
+# Default port for managed cluster tunnel connections
+DEFAULT_MANAGED_CLUSTER_PORT = 443
+
 
 class BastionCreate(_BastionCreate):
     @classmethod
@@ -413,6 +416,13 @@ def _validate_resourceid(target_resource_id):
         raise InvalidArgumentValueError(err_msg)
 
 
+def _is_managed_cluster(target_resource_id):
+    """Check if the target resource is a managed cluster (AKS)."""
+    if not target_resource_id:
+        return False
+    return "microsoft.containerservice/managedclusters" in target_resource_id.lower()
+
+
 def _get_bastion_endpoint(cmd, bastion, resource_port, target_resource_id):
     if bastion['sku']['name'] == BastionSku.QuickConnect.value or bastion['sku']['name'] == BastionSku.Developer.value:
         from .developer_sku_helper import (_get_data_pod)
@@ -466,10 +476,33 @@ def create_bastion_tunnel(cmd, target_resource_id, target_ip_address, resource_g
     if ip_connect:
         target_resource_id = f"/subscriptions/{get_subscription_id(cmd.cli_ctx)}/resourceGroups/" \
                              f"{resource_group_name}/providers/Microsoft.Network/bh-hostConnect/{target_ip_address}"
-
-    if ip_connect and int(resource_port) not in [22, 3389]:
-        raise UnrecognizedArgumentError("Custom ports are not allowed. Allowed ports for Tunnel with IP connect is \
-                                        22, 3389.")
+        
+        # For IP connect, validate resource_port is provided and is valid
+        if not resource_port:
+            raise RequiredArgumentMissingError("--resource-port is required for IP connect.")
+        
+        try:
+            port_int = int(resource_port)
+        except (TypeError, ValueError):
+            raise InvalidArgumentValueError(f"Invalid resource port: {resource_port}. Must be a valid integer.")
+        
+        if port_int not in [22, 3389]:
+            raise UnrecognizedArgumentError(
+                "Custom ports are not allowed. Allowed ports for Tunnel with IP connect are 22, 3389.")
+    else:
+        # Default resource_port to DEFAULT_MANAGED_CLUSTER_PORT for managed clusters if not provided
+        if not resource_port and _is_managed_cluster(target_resource_id):
+            resource_port = DEFAULT_MANAGED_CLUSTER_PORT
+        
+        # Validate that resource_port is provided for non-managed cluster targets
+        if not resource_port:
+            raise RequiredArgumentMissingError("--resource-port is required for non-managed cluster targets.")
+        
+        # Validate that resource_port is a valid integer
+        try:
+            int(resource_port)
+        except (TypeError, ValueError):
+            raise InvalidArgumentValueError(f"Invalid resource port: {resource_port}. Must be a valid integer.")
 
     _validate_resourceid(target_resource_id)
     bastion_endpoint = _get_bastion_endpoint(cmd, bastion, resource_port, target_resource_id)

@@ -7,8 +7,29 @@
 
 # pylint: disable=line-too-long
 
+import unittest
 from azure.cli.testsdk import *
 from azure.cli.testsdk.scenario_tests import AllowLargeResponse
+
+
+class BastionUnitTests(unittest.TestCase):
+    def test_is_managed_cluster(self):
+        """Test the _is_managed_cluster helper function"""
+        from azext_bastion.custom import _is_managed_cluster
+        
+        # Test managed cluster resource ID
+        managed_cluster_id = "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/myRG/providers/Microsoft.ContainerService/managedClusters/myAKS"
+        self.assertTrue(_is_managed_cluster(managed_cluster_id))
+        
+        # Test VM resource ID
+        vm_id = "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/myRG/providers/Microsoft.Compute/virtualMachines/myVM"
+        self.assertFalse(_is_managed_cluster(vm_id))
+        
+        # Test None
+        self.assertFalse(_is_managed_cluster(None))
+        
+        # Test empty string
+        self.assertFalse(_is_managed_cluster(""))
 
 
 class BastionScenario(ScenarioTest):
